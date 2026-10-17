@@ -26,22 +26,35 @@ std::vector<std::vector<int>> parse_dist_matrix(std::istream& in){
         while(std::getline(ss, element, ',')){
 
             try{
-                int value = std::stoi(element, &used);
+                //check for trailing control characters
+                size_t last = element.find_last_not_of(" \t\r");   
+                element.erase(last + 1);     
 
-                if (used == element.size()){
+                int value = std::stoi(element, &used);
+                
+                //check if value is in range of >= -1
+                if (value < -1){
+                    throw std::runtime_error("Input value of '" +element
+                                            + "' at line "+std::to_string(line_count)+" is out of range. Values must be equal to or greater than -1.");
+                }
+                else if (used == element.size()){
+                    // if value in range push to row
                     row.push_back(value);
                 }
                 else {
+                    // if element contains multiple character types of ints non non-ints
                     throw std::runtime_error("Input value of '" +element
                                             + "' at line "+std::to_string(line_count)+" is of wrong type. Matrix must only contain whole numbers.");
                 }
             }
             catch (const std::out_of_range&) {
+                // if value is too large for int assignment
                 throw std::runtime_error("Input value of '" +element
                                             + "' at line "+std::to_string(line_count)+ " is too large for int assignment.");
                 
             }
             catch (const std::invalid_argument&) {
+                // if value contains non-interger values
                 throw std::runtime_error("Input value of '" +element
                                             + "' at line "+std::to_string(line_count)+ " is of wrong type. Matrix must only contain whole numbers.");
                 
@@ -53,7 +66,7 @@ std::vector<std::vector<int>> parse_dist_matrix(std::istream& in){
 
     }
 
-    //check it is square
+    //check if its a square
     // .size() returns a size_t so keeping the convention to avoid compiler erros
     size_t height = dist_matrix.size();
     for (size_t i = 0; i < height; i++){
@@ -68,6 +81,13 @@ std::vector<std::vector<int>> parse_dist_matrix(std::istream& in){
                                  " has " + std::to_string(dist_matrix[i].size()) +
                                  " values, expected " + std::to_string(height));
         } 
+    }
+
+    //add a check to find if diagonals are marked with with 0's
+
+    //check if matrix is empty
+    if (dist_matrix.size() == 0){
+        throw std::runtime_error("Matrix contains no values.");
     }
 
     return dist_matrix;
