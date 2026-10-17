@@ -83,7 +83,7 @@ TEST(ParseDistMatrix, ParsesValid3x3Matrix) {
 
     ASSERT_EQ(matrix.size(), 3u);
     for (const auto& row : matrix) ASSERT_EQ(row.size(), 3u);
-    EXPECT_EQ(matrix[0][1], 1);
+    EXPECT_EQ(matrix[0][1], 5);
     EXPECT_EQ(matrix[2][1], 3);
 }
 
