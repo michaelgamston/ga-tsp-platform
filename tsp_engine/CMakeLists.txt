@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ---- Core library: all engine code except main() ----
 add_library(tsp_core
     src/map_io.cpp
+    src/individual.cpp
 )
 target_include_directories(tsp_core PUBLIC include)
 target_compile_options(tsp_core PRIVATE -Wall -Wextra)
@@ -27,8 +28,15 @@ FetchContent_MakeAvailable(googletest)
 # ---- Tests ----
 enable_testing()
 
-add_executable(engine_tests tests/test_map_io.cpp)
+add_executable(engine_tests 
+    tests/test_map_io.cpp
+    tests/test_individual.cpp
+)
+
 target_link_libraries(engine_tests PRIVATE tsp_core GTest::gtest_main)
+
+target_compile_options(engine_tests PRIVATE -Wall -Wextra)
+
 
 include(GoogleTest)
 gtest_discover_tests(engine_tests)
