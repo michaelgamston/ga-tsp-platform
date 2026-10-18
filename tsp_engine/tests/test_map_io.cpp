@@ -10,6 +10,19 @@ static std::vector<std::vector<int>> parse(const std::string& text){
     return parse_dist_matrix(input);
 }
 
+// helper: build a valid n x n matrix as CSV text (0 on the diagonal, 1 elsewhere)
+static std::string make_matrix(size_t n){
+    std::string text;
+    for (size_t row = 0; row < n; row++){
+        for (size_t col = 0; col < n; col++){
+            text += (row == col) ? "0" : "1";
+            if (col < n - 1) text += ",";
+        }
+        text += "\n";
+    }
+    return text;
+}
+
 // fail cases
 
     // test incorrect character types
@@ -73,6 +86,17 @@ TEST(ParseDistMatrix, ThrowsOnOnlyBlankLines) {
 TEST(ParseDistMatrix, ThrowsOnNegativeOtherThanMinusOne) {
     EXPECT_THROW(parse("0,-5\n-5,0\n"), std::runtime_error);
 }
+
+    // test for maps that are too big 
+
+TEST(ParseDistMatrix, ThrowsOnMapLargerThanMaximum) {
+    EXPECT_THROW(parse(make_matrix(51)), std::runtime_error);
+}
+
+TEST(ParseDistMatrix, AcceptsMapAtMaximumSize) {
+    EXPECT_NO_THROW(parse(make_matrix(50)));
+}
+
 
 // pass cases
 

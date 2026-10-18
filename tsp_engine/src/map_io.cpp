@@ -62,6 +62,11 @@ std::vector<std::vector<int>> parse_dist_matrix(std::istream& in){
             
         }
 
+        if (row.size() > 50u){
+            //if there are too many nodes, throw an error
+            throw std::runtime_error("Row "+std::to_string(line_count)+" contains too many nodes. Maximum nodes per row is 50.");
+        }
+
         dist_matrix.push_back(row);
 
     }
