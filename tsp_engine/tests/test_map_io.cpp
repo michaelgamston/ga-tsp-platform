@@ -28,40 +28,41 @@ static std::string make_matrix(size_t n){
     // test incorrect character types
 
 TEST(ParseDistMatrix, ThrowsOnLetters) {
-    EXPECT_THROW(parse("0,1\nabc,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,1,2\nabc,0,3\n2,3,0\n"), std::runtime_error);
 }
 
 TEST(ParseDistMatrix, ThrowsOnNumberFollowedByLetters) {
-    EXPECT_THROW(parse("0,12abc\n12,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,12abc,2\n12,0,3\n2,3,0\n"), std::runtime_error);
 }
 
     // test for numbers seperated by a space 
 
 TEST(ParseDistMatrix, ThrowsOnNumbersSeperatedBySpace){
-    EXPECT_THROW(parse("0,1 2\n12,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,1 2,2\n1,0,3\n2,3,0\n"), std::runtime_error);
 
 }
 
     // test non-square matrix
 
 TEST(ParseDistMatrix, ThrowsOnRowTooShort) {
-    EXPECT_THROW(parse("0,1,2\n1,0\n2,3,0\n"), std::runtime_error);
+    // 4x4 with one row of 3, so the short row is still within the 3 node minimum
+    EXPECT_THROW(parse("0,1,2,3\n1,0,4,5\n2,4,0\n3,5,6,0\n"), std::runtime_error);
 }
 
 TEST(ParseDistMatrix, ThrowsOnMoreRowsThanColumns) {
-    EXPECT_THROW(parse("0,1\n1,0\n2,3\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,1,2\n1,0,3\n2,3,0\n4,5,6\n"), std::runtime_error);
 }
 
     // test for intergers that are too large
 
 TEST(ParseDistMatrix, ThrowsOnIntegerTooLarge) {
-    EXPECT_THROW(parse("0,99999999999\n99999999999,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,99999999999,2\n99999999999,0,3\n2,3,0\n"), std::runtime_error);
 }
 
     // test for flaoting point numbers
 
 TEST(ParseDistMatrix, ThrowsOnFloatingPoint) {
-    EXPECT_THROW(parse("0,12.5\n12.5,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,12.5,2\n12.5,0,3\n2,3,0\n"), std::runtime_error);
 }
 
 
@@ -84,7 +85,7 @@ TEST(ParseDistMatrix, ThrowsOnOnlyBlankLines) {
     // test for negative inputs that are no -1
 
 TEST(ParseDistMatrix, ThrowsOnNegativeOtherThanMinusOne) {
-    EXPECT_THROW(parse("0,-5\n-5,0\n"), std::runtime_error);
+    EXPECT_THROW(parse("0,-5,2\n-5,0,3\n2,3,0\n"), std::runtime_error);
 }
 
     // test for maps that are too big 
@@ -95,6 +96,16 @@ TEST(ParseDistMatrix, ThrowsOnMapLargerThanMaximum) {
 
 TEST(ParseDistMatrix, AcceptsMapAtMaximumSize) {
     EXPECT_NO_THROW(parse(make_matrix(50)));
+}
+
+// test for maps that are too small 
+
+TEST(ParseDistMatrix, ThrowsOnMapSmallerThanMinimum) {
+    EXPECT_THROW(parse(make_matrix(2)), std::runtime_error);
+}
+
+TEST(ParseDistMatrix, AcceptsMapAtMinimumSize) {
+    EXPECT_NO_THROW(parse(make_matrix(3)));
 }
 
 
@@ -125,64 +136,65 @@ TEST(ParseDistMatrix, AcceptsMinusOneForUnconnectedNodes) {
     // test blank lines are skipped
 
 TEST(ParseDistMatrix, SkipsBlankLines) {
-    auto matrix = parse("\n0,1\n\n1,0\n\n");
+    auto matrix = parse("\n0,1,2\n\n1,0,3\n\n2,3,0\n\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
+    ASSERT_EQ(matrix.size(), 3u);
     EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
+    EXPECT_EQ(matrix[2][1], 3);
 }
 
     // test for leading blank spaces
 
 TEST(ParseDistMatrix, AcceptsLeadingSpaces) {
-    auto matrix = parse("0, 1\n 1,0\n");
+    auto matrix = parse("0, 1, 2\n 1,0, 3\n 2, 3,0\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
+    ASSERT_EQ(matrix.size(), 3u);
     EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
+    EXPECT_EQ(matrix[2][1], 3);
 }
 
     // test for trailing blank spaces
 
 TEST(ParseDistMatrix, AcceptsTrailingSpaces) {
-    auto matrix = parse("0,1 \n1 ,0\n");
+    auto matrix = parse("0,1 ,2 \n1 ,0,3 \n2 ,3 ,0\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
+    ASSERT_EQ(matrix.size(), 3u);
     EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
+    EXPECT_EQ(matrix[2][1], 3);
 }
 
     // test for trailing commas
 
 TEST(ParseDistMatrix, AcceptsTrailingCommas) {
-    auto matrix = parse("0,1,\n1,0,\n");
+    auto matrix = parse("0,1,2,\n1,0,3,\n2,3,0,\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
+    ASSERT_EQ(matrix.size(), 3u);
+    for (const auto& row : matrix) ASSERT_EQ(row.size(), 3u);
     EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
-    
+    EXPECT_EQ(matrix[2][1], 3);
+
 }
 
     // test windows line endings accepted
 
 TEST(ParseDistMatrix, AcceptsTrailingLineBreaks) {
-    auto matrix = parse("0,1\r\n1,0\r\n");
+    auto matrix = parse("0,1,2\r\n1,0,3\r\n2,3,0\r\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
-    EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
-    
+    ASSERT_EQ(matrix.size(), 3u);
+    EXPECT_EQ(matrix[0][2], 2);   // last value on each line is the one next to the \r
+    EXPECT_EQ(matrix[1][2], 3);
+
 }
 
     // test trailing tabs accepted
 
 TEST(ParseDistMatrix, AcceptsTrailingTabs) {
-    auto matrix = parse("0,1\t\n1,0\t\n");
+    auto matrix = parse("0,1,2\t\n1,0,3\t\n2,3,0\t\n");
 
-    ASSERT_EQ(matrix.size(), 2u);
-    EXPECT_EQ(matrix[0][1], 1);
-    EXPECT_EQ(matrix[1][0], 1);
-    
+    ASSERT_EQ(matrix.size(), 3u);
+    EXPECT_EQ(matrix[0][2], 2);   // last value on each line is the one next to the \t
+    EXPECT_EQ(matrix[1][2], 3);
+
 }
 
 // final test
