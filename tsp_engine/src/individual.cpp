@@ -3,8 +3,9 @@
 #include <random>
 #include <algorithm>
 #include <numeric>
-
-
+#include <stdexcept>
+#include <string>
+#include <sstream>
 
 //using the intialiser list to construct the variables with elements
 //rather than contructing them emmpty and then assigning them
@@ -52,11 +53,37 @@ long long Individual::get_fitness() const{
     return m_fitness;
 }
 
-void Individual::update_m_genome(std::vector<int> new_genome, const std::vector<std::vector<int>>& dist_matrix){
+void Individual::update_genome(std::vector<int> new_genome, const std::vector<std::vector<int>>& dist_matrix){
+    
+    int num_nodes = int(dist_matrix.size());
+    std::vector<bool> seen((m_genome.size()), false);
+
+    // checks for valid genome structure 
+    //! make this debug only in future fix
+    if (new_genome.size() != dist_matrix.size()){
+        throw std::runtime_error("Genome is incorrec size. Should be = "+std::to_string(dist_matrix.size())+
+        " actual size is = "+std::to_string(new_genome.size()));
+    }
+
+    for (int node : new_genome){
+        if (node < 0 || node > num_nodes-1 || seen[node]){
+
+            std::ostringstream out;
+            for (size_t i = 0; i < new_genome.size(); i++) {
+                if (i > 0) out << ", ";
+                out << new_genome[i];
+            }
+            std::string text = out.str();   // e.g. "0, 1, 1, 3"
+
+            throw std::runtime_error("Genome has incorrect values : " +text);
+        }
+        seen[node] = true;
+    }
+
     m_genome = std::move(new_genome);
     update_fitness(dist_matrix);
 }
 
-const std::vector<int>& Individual::get_m_genome() const{
+const std::vector<int>& Individual::get_genome() const{
     return m_genome;
 }

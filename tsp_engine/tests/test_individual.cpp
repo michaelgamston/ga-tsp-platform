@@ -27,7 +27,7 @@ static const Matrix FULL = {
 static Individual with_genome(const Matrix& m, const std::vector<int>& genome){
     std::mt19937 gen(0);
     Individual ind(gen, m);
-    ind.update_m_genome(genome, m);
+    ind.update_genome(genome, m);
     return ind;
 }
 
@@ -39,7 +39,7 @@ TEST(Individual, GenomeSizeMatchesMatrix) {
     std::mt19937 gen(42);
     Individual ind(gen, FULL);
 
-    EXPECT_EQ(ind.get_m_genome().size(), FULL.size());
+    EXPECT_EQ(ind.get_genome().size(), FULL.size());
 }
 
     // check genome contains only unique values
@@ -49,7 +49,7 @@ TEST(Individual, GenomeIsValidPermutation) {
     Individual ind(gen, FULL);
 
     // sorting a valid permutation of n nodes must give 0, 1, ..., n-1
-    std::vector<int> sorted = ind.get_m_genome();   // a copy, so sorting doesn't touch the individual
+    std::vector<int> sorted = ind.get_genome();   // a copy, so sorting doesn't touch the individual
     std::sort(sorted.begin(), sorted.end());
 
     std::vector<int> expected(FULL.size());
@@ -66,7 +66,7 @@ TEST(Individual, FitnessCalculatedOnConstruction) {
 
     // work out the length of whatever tour it was given, independently
     long long expected = 0;
-    const auto& g = ind.get_m_genome();
+    const auto& g = ind.get_genome();
     for (size_t i = 0; i < g.size(); i++){
         expected += FULL[g[i]][g[(i + 1) % g.size()]];   // % wraps the last node back to the first
     }
@@ -83,12 +83,12 @@ TEST(Individual, SameSeedGivesSameGenomes) {
     // the first individual from each generator should match...
     Individual a1(gen_a, FULL);
     Individual b1(gen_b, FULL);
-    EXPECT_EQ(a1.get_m_genome(), b1.get_m_genome());
+    EXPECT_EQ(a1.get_genome(), b1.get_genome());
 
     // ...and so should the next, since both generators advance identically
     Individual a2(gen_a, FULL);
     Individual b2(gen_b, FULL);
-    EXPECT_EQ(a2.get_m_genome(), b2.get_m_genome());
+    EXPECT_EQ(a2.get_genome(), b2.get_genome());
 }
 
     // check the fitness is calculated correctly for a known route
@@ -149,13 +149,87 @@ TEST(Individual, UnconnectedReturnEdgeAddsPenalty) {
     EXPECT_EQ(with_genome(m, {0, 1, 2, 3}).get_fitness(), 75 + PENALTY);
 }
 
-    // changing the genome with update_m_genome successfully updates the fitness
+    // changing the genome with update_genome successfully updates the fitness
 
 TEST(Individual, UpdateGenomeRecalculatesFitness) {
     Individual ind = with_genome(FULL, {0, 1, 2, 3});
     ASSERT_EQ(ind.get_fitness(), 95);
 
-    ind.update_m_genome({0, 1, 3, 2}, FULL);
+    ind.update_genome({0, 1, 3, 2}, FULL);
 
     EXPECT_EQ(ind.get_fitness(), 80);
+}
+
+    // a valid genome is accepted by update_genome
+
+TEST(Individual, UpdateGenomeAcceptsValidGenome) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_NO_THROW(ind.update_genome({3, 2, 1, 0}, FULL));
+    EXPECT_EQ(ind.get_genome(), (std::vector<int>{3, 2, 1, 0}));
+}
+
+// fail tests: update_genome must reject genomes that are not a valid tour
+
+    // a node appears more than once
+
+TEST(Individual, UpdateGenomeThrowsOnDuplicateNode) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_THROW(ind.update_genome({0, 1, 1, 3}, FULL), std::runtime_error);
+}
+
+    // a node is below the first valid node (0)
+
+TEST(Individual, UpdateGenomeThrowsOnNegativeNode) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_THROW(ind.update_genome({0, -1, 2, 3}, FULL), std::runtime_error);
+}
+
+    // a node is past the last valid node (n - 1)
+
+TEST(Individual, UpdateGenomeThrowsOnNodeEqualToMapSize) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    // FULL has nodes 0 - 3, so 4 is just out of range (boundary test)
+    EXPECT_THROW(ind.update_genome({0, 1, 2, 4}, FULL), std::runtime_error);
+}
+
+TEST(Individual, UpdateGenomeThrowsOnNodeFarOutOfRange) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_THROW(ind.update_genome({0, 1, 2, 9}, FULL), std::runtime_error);
+}
+
+    // the genome has the wrong number of nodes
+
+TEST(Individual, UpdateGenomeThrowsOnGenomeTooShort) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_THROW(ind.update_genome({0, 1, 2}, FULL), std::runtime_error);
+}
+
+TEST(Individual, UpdateGenomeThrowsOnEmptyGenome) {
+    std::mt19937 gen(0);
+    Individual ind(gen, FULL);
+
+    EXPECT_THROW(ind.update_genome({}, FULL), std::runtime_error);
+}
+
+    // a rejected genome leaves the individual exactly as it was
+
+TEST(Individual, InvalidGenomeLeavesIndividualUnchanged) {
+    Individual ind = with_genome(FULL, {0, 1, 2, 3});
+
+    EXPECT_THROW(ind.update_genome({0, 1, 1, 3}, FULL), std::runtime_error);
+
+    EXPECT_EQ(ind.get_genome(), (std::vector<int>{0, 1, 2, 3}));
+    EXPECT_EQ(ind.get_fitness(), 95);
 }

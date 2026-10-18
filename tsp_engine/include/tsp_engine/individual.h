@@ -18,9 +18,9 @@ class Individual{
 
         long long get_fitness() const;
 
-        void update_m_genome(std::vector<int> new_genome, const std::vector<std::vector<int>>& dist_matrix);
+        void update_genome(std::vector<int> new_genome, const std::vector<std::vector<int>>& dist_matrix);
 
-        const std::vector<int>& get_m_genome() const;
+        const std::vector<int>& get_genome() const;
 
 
 };
