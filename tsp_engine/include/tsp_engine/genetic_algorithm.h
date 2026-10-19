@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <stdexcept>
+#include <optional>
 #include "tsp_engine/map_io.h"
 #include "tsp_engine/individual.h"
 
@@ -15,9 +16,8 @@ class Genetic_algorithm{
         const int m_P; //population size
         const int m_R; // terations 
         const float m_M; // mutation rate  
-        Individual best_ind;
+        std::optional<Individual> m_best_ind;
        
-        std::vector<int> m_best; // for storung the best result
         std::vector<Individual> m_population; // for storing the population of individuals
         std::vector<std::vector<int>> m_dist_matrix; // matrix storing distances
 
