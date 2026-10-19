@@ -556,3 +556,141 @@ TEST(Mutate, ThrowsOnEmptyGenome) {
 
     EXPECT_THROW(Genetic_algorithm::mutate(g, gen, 1.0f), std::runtime_error);
 }
+
+//! elitism tests -------------------------------------------------------------
+// a map where every edge is 5, so every tour is 20: better than anything on MAP
+static const Matrix FLAT = {
+    {0, 5, 5, 5},
+    {5, 0, 5, 5},
+    {5, 5, 0, 5},
+    {5, 5, 5, 0},
+};
+
+// the previous generation's best: fitness 20, and a genome none of the MAP individuals use
+static const Genome ELITE_GENOME = {3, 2, 1, 0};
+static Individual elite(){ return with_genome(FLAT, ELITE_GENOME); }   // 5 + 5 + 5 + 5 = 20
+
+    // the worst individual is replaced by the previous best
+
+TEST(Elitism, WorstIsReplacedByPreviousBest) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    // WORST (51) was at index 1
+    EXPECT_EQ(pop[1].get_genome(), ELITE_GENOME);
+    EXPECT_EQ(pop[1].get_fitness(), 20);
+}
+
+    // everyone other than the worst is left unchanged
+
+TEST(Elitism, OtherIndividualsAreUnchanged) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    EXPECT_EQ(pop[0].get_genome(), MIDDLE);
+    EXPECT_EQ(pop[0].get_fitness(), 45);
+    EXPECT_EQ(pop[2].get_genome(), BEST);
+    EXPECT_EQ(pop[2].get_fitness(), 30);
+}
+
+    // the population size does not change
+
+TEST(Elitism, PopulationSizeIsUnchanged) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    EXPECT_EQ(pop.size(), 3u);
+}
+
+    // the worst is the first in the population (boundary)
+
+TEST(Elitism, ReplacesWorstInFirstPosition) {
+    std::vector<Individual> pop = {with_genome(MAP, WORST), with_genome(MAP, MIDDLE), with_genome(MAP, BEST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    EXPECT_EQ(pop[0].get_genome(), ELITE_GENOME);
+    EXPECT_EQ(pop[1].get_genome(), MIDDLE);
+    EXPECT_EQ(pop[2].get_genome(), BEST);
+}
+
+    // the worst is the last in the population (boundary)
+
+TEST(Elitism, ReplacesWorstInLastPosition) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, BEST), with_genome(MAP, WORST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    EXPECT_EQ(pop[0].get_genome(), MIDDLE);
+    EXPECT_EQ(pop[1].get_genome(), BEST);
+    EXPECT_EQ(pop[2].get_genome(), ELITE_GENOME);
+}
+
+    // the best after elitism is never worse than the previous best
+    // (checked both when the previous best is better, and when it is worse, than the current best)
+
+TEST(Elitism, BestIsNeverWorseThanPreviousBest) {
+    // previous best (20) beats everyone in the population
+    std::vector<Individual> pop_a = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+    Individual previous_a = elite();
+    Genetic_algorithm::elitism(pop_a, previous_a);
+    EXPECT_LE(Genetic_algorithm::find_best_ind(pop_a).get_fitness(), previous_a.get_fitness());
+
+    // previous best (45) is worse than the current best (30)
+    std::vector<Individual> pop_b = {with_genome(MAP, BEST), with_genome(MAP, WORST), with_genome(MAP, WORST)};
+    Individual previous_b = with_genome(MAP, MIDDLE);
+    Genetic_algorithm::elitism(pop_b, previous_b);
+    EXPECT_LE(Genetic_algorithm::find_best_ind(pop_b).get_fitness(), previous_b.get_fitness());
+}
+
+    // a previous best that beats everyone becomes the population's new best
+
+TEST(Elitism, BetterPreviousBestBecomesNewBest) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    Individual best = Genetic_algorithm::find_best_ind(pop);
+    EXPECT_EQ(best.get_genome(), ELITE_GENOME);
+    EXPECT_EQ(best.get_fitness(), 20);
+}
+
+    // when two individuals tie for worst, exactly one of them is replaced
+
+TEST(Elitism, TiedWorstReplacesExactlyOne) {
+    std::vector<Individual> pop = {with_genome(MAP, WORST), with_genome(MAP, BEST), with_genome(MAP, WORST)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    int still_worst = 0;
+    int elites = 0;
+    for (const Individual& ind : pop){
+        if (ind.get_fitness() == 51) still_worst++;
+        if (ind.get_genome() == ELITE_GENOME) elites++;
+    }
+    EXPECT_EQ(still_worst, 1);
+    EXPECT_EQ(elites, 1);
+    EXPECT_EQ(pop[1].get_genome(), BEST);   // the non-tied individual is untouched
+}
+
+    // a population of one is replaced by the previous best
+
+TEST(Elitism, PopulationOfOneIsReplaced) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE)};
+
+    Genetic_algorithm::elitism(pop, elite());
+
+    ASSERT_EQ(pop.size(), 1u);
+    EXPECT_EQ(pop[0].get_genome(), ELITE_GENOME);
+}
+
+    // fail: an empty population has no worst individual to replace
+
+TEST(Elitism, ThrowsOnEmptyPopulation) {
+    std::vector<Individual> pop;
+
+    EXPECT_THROW(Genetic_algorithm::elitism(pop, elite()), std::runtime_error);
+}
