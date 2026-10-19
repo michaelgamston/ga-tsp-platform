@@ -17,10 +17,125 @@ static bool is_valid_permutation(const Genome& g, size_t n){
     return sorted == expected;
 }
 
+// find_best_ind test
+
+using Matrix = std::vector<std::vector<int>>;
+
+// 4 node map where the 3 possible tours all have different lengths
+//        0   1   2   3
+// 0  [   0,  1,  2,  4 ]
+// 1  [   1,  0,  8, 16 ]
+// 2  [   2,  8,  0, 32 ]
+// 3  [   4, 16, 32,  0 ]
+static const Matrix MAP = {
+    {0,  1,  2,  4},
+    {1,  0,  8, 16},
+    {2,  8,  0, 32},
+    {4, 16, 32,  0},
+};
+
+static const Genome BEST   = {0, 2, 1, 3};   // 2 + 8 + 16 + 4  = 30
+static const Genome MIDDLE = {0, 1, 2, 3};   // 1 + 8 + 32 + 4  = 45
+static const Genome WORST  = {0, 1, 3, 2};   // 1 + 16 + 32 + 2 = 51
+
+// helper: build an individual with a chosen tour on a given map
+static Individual with_genome(const Matrix& m, const Genome& genome){
+    std::mt19937 gen(0);
+    Individual ind(gen, m);
+    ind.update_genome(genome, m);
+    return ind;
+}
+
+    // ensure best individual is found based on having the lowest fitness
+
+TEST(FindBestInd, ReturnsLowestFitness) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, BEST), with_genome(MAP, WORST)};
+
+    Individual best = Genetic_algorithm::find_best_ind(pop);
+
+    EXPECT_EQ(best.get_fitness(), 30);
+    EXPECT_EQ(best.get_genome(), BEST);
+}
+
+    // best individual is the first in the population (boundary)
+
+TEST(FindBestInd, FindsBestInFirstPosition) {
+    std::vector<Individual> pop = {with_genome(MAP, BEST), with_genome(MAP, MIDDLE), with_genome(MAP, WORST)};
+
+    EXPECT_EQ(Genetic_algorithm::find_best_ind(pop).get_genome(), BEST);
+}
+
+    // best individual is the last in the population (boundary)
+
+TEST(FindBestInd, FindsBestInLastPosition) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+
+    EXPECT_EQ(Genetic_algorithm::find_best_ind(pop).get_genome(), BEST);
+}
+
+    // a population of one returns that individual
+
+TEST(FindBestInd, SingleIndividualIsReturned) {
+    std::vector<Individual> pop = {with_genome(MAP, WORST)};
+
+    EXPECT_EQ(Genetic_algorithm::find_best_ind(pop).get_genome(), WORST);
+}
+
+    // two individuals tied for best: either one is acceptable, but it must be one of them
+
+TEST(FindBestInd, TiedBestReturnsOneOfThem) {
+    // {2, 1, 3, 0} is the same cycle as BEST from a different start, so also 30
+    const Genome BEST_ROTATED = {2, 1, 3, 0};
+    std::vector<Individual> pop = {with_genome(MAP, WORST), with_genome(MAP, BEST),
+                                   with_genome(MAP, MIDDLE), with_genome(MAP, BEST_ROTATED)};
+
+    Individual best = Genetic_algorithm::find_best_ind(pop);
+
+    EXPECT_EQ(best.get_fitness(), 30);
+    EXPECT_TRUE(best.get_genome() == BEST || best.get_genome() == BEST_ROTATED);
+}
+
+    // a short tour using an unconnected edge is never chosen over a longer valid one
+
+TEST(FindBestInd, PenalisedTourIsNotChosenOverValidTour) {
+    Matrix m = MAP;
+    m[1][3] = m[3][1] = -1;
+
+    // ignoring the penalty, BEST would be shortest (2 + 8 - 1 + 4 = 13),
+    // but it uses edge 1 - 3, so MIDDLE (45, all edges valid) should win
+    std::vector<Individual> pop = {with_genome(m, BEST), with_genome(m, MIDDLE), with_genome(m, WORST)};
+
+    Individual best = Genetic_algorithm::find_best_ind(pop);
+
+    EXPECT_EQ(best.get_genome(), MIDDLE);
+    EXPECT_EQ(best.get_fitness(), 45);
+}
+
+    // finding the best does not change the population
+
+TEST(FindBestInd, DoesNotModifyPopulation) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, BEST), with_genome(MAP, WORST)};
+
+    Genetic_algorithm::find_best_ind(pop);
+
+    ASSERT_EQ(pop.size(), 3u);
+    EXPECT_EQ(pop[0].get_genome(), MIDDLE);
+    EXPECT_EQ(pop[1].get_genome(), BEST);
+    EXPECT_EQ(pop[2].get_genome(), WORST);
+}
+
+    // fail: an empty population has no best individual
+
+TEST(FindBestInd, ThrowsOnEmptyPopulation) {
+    std::vector<Individual> pop;
+
+    EXPECT_THROW(Genetic_algorithm::find_best_ind(pop), std::runtime_error);
+}
+
+
 // parents used by most tests (8 nodes, positions 0 - 7)
 static const Genome A = {0, 1, 2, 3, 4, 5, 6, 7};
 static const Genome B = {3, 7, 5, 1, 6, 0, 2, 4};
-
 // cut points are inclusive: (2, 5) means positions 2, 3, 4 and 5
 
 // cross over test

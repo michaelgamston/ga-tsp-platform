@@ -15,11 +15,12 @@ class Genetic_algorithm{
         const int m_P; //population size
         const int m_R; // terations 
         const float m_M; // mutation rate  
-
+        Individual best_ind;
        
         std::vector<int> m_best; // for storung the best result
         std::vector<Individual> m_population; // for storing the population of individuals
         std::vector<std::vector<int>> m_dist_matrix; // matrix storing distances
+
 
         //random number generator 
         std::mt19937 m_gen;
@@ -33,7 +34,7 @@ class Genetic_algorithm{
         Genetic_algorithm(int p, int r, float m, std::istream& in, unsigned seed);
 
         //find current best indiviual
-        static Individual& find_best_ind(std::vector<Individual>& population);
+        static Individual find_best_ind(const std::vector<Individual>& population);
 
         //tornament selection 
             //randomly select two parents and keep the strongest as an offspring

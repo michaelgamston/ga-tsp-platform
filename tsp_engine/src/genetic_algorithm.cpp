@@ -23,6 +23,26 @@ Genetic_algorithm::Genetic_algorithm(int p, int r, float m, std::istream& in, un
 
 }    
 
+Individual Genetic_algorithm::find_best_ind(const std::vector<Individual>& population){
+
+    if (population.size() == 0u) throw std::runtime_error("Find best ind Error : population empty");
+
+    //to avoid copying each time we can point to the best element
+    const Individual* best_ind_ptr = &population[0];
+
+    for (const Individual& ind : population){
+        //iterating through each ind in population
+        //if a new lowest fitness is found the pointer shifts to point at that ind
+        if (ind.get_fitness() < best_ind_ptr->get_fitness()){
+            best_ind_ptr = &ind;
+        }
+    }
+
+    //dereference the pointer and return the object
+    return *best_ind_ptr;
+
+}
+
 std::vector<int> Genetic_algorithm::crossover(const std::vector<int>& genome1,const std::vector<int>& genome2, const int cross_low, const int cross_high){
     
     if (genome1.size() != genome2.size()) throw std::runtime_error("Crossover Error : genomes of different lengths found in crossover");
