@@ -40,7 +40,7 @@ class Genetic_algorithm{
         static std::vector<int> crossover(const std::vector<int>& genome1,const std::vector<int>& genome2, const int cross_low, const int cross_high);
 
         // randomly mutate (or swap) genes in a genome 
-        static void mutate(Individual& offspring);
+        static void mutate(std::vector<int>& genome, std::mt19937& gen, const float mutation_rate);
 
         //swap the best individual from the last run for the worst of this run
         void elitism();

@@ -4,6 +4,8 @@
 #include <string>
 #include <stdexcept>
 #include <cassert>
+#include <numeric>
+#include <iterator>
 #include "tsp_engine/map_io.h"
 #include "tsp_engine/individual.h"
 #include "tsp_engine/genetic_algorithm.h"
@@ -109,18 +111,27 @@ std::vector<int> Genetic_algorithm::crossover(const std::vector<int>& genome1,co
 
 }
 
-//find current best indiviual
+void Genetic_algorithm::mutate(std::vector<int>& genome, std::mt19937& gen, const float mutation_rate){
 
-//tornament selection 
-    //randomly select two parents and keep the strongest as an offspring
+    if (mutation_rate < 0) throw std::runtime_error("Mutate Error : mutation rate is negative.");
+    if (mutation_rate > 1) throw std::runtime_error("Mutate Error : mutation rate is over 1.");
+    if (genome.size() < 2) throw std::runtime_error("Mutate Error : genome of one gene dectected");
 
-// go through offspring in pairs and cross over the genomes
+    std::bernoulli_distribution should_mutate(mutation_rate);
 
-// randomly mutate (or swap) genes in a genome 
+    if (should_mutate(gen)){
 
-//swap the best individual from the last run for the worst of this run
+        std::vector<int> positions(genome.size());
+        std::iota(positions.begin(), positions.end(), 0);        // 0, 1, 2, ..., n-1
 
-//build a runner function 
-    //runs the algorithm for set number of itterations 
-    // or untill it stops improving
+        std::vector<int> points;
+        std::sample(positions.begin(), positions.end(), std::back_inserter(points), 2, gen);
+
+        int low  = points[0];   // always the smaller one: sample keeps the input order
+        int high = points[1];   // always different from low: no repeats
+
+        std::reverse(genome.begin() + low, genome.begin() + high + 1);
+
+    }
+}
 

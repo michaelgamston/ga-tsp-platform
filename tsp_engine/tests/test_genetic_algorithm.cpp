@@ -402,3 +402,157 @@ TEST(Crossover, ThrowsOnHighcrossLowerThanLowcross){
 TEST(Crossover, ThrowsOnNegativeLowcross){
     EXPECT_THROW(Genetic_algorithm::crossover(A, B, -1, 6), std::runtime_error);
 }
+
+//! mutation tests ------------------------------------------------------------------------
+// helper: a shuffled genome of n nodes
+static Genome random_genome(int n, std::mt19937& rng){
+    Genome g(n);
+    std::iota(g.begin(), g.end(), 0);
+    std::shuffle(g.begin(), g.end(), rng);
+    return g;
+}
+
+// helper: true if `after` is `before` with exactly one block reversed and everything else untouched
+static bool is_single_reversed_block(const Genome& before, const Genome& after){
+    if (before.size() != after.size()) return false;
+
+    // find the first and last positions that differ
+    int first = -1, last = -1;
+    for (int i = 0; i < int(before.size()); i++){
+        if (before[i] != after[i]){
+            if (first == -1) first = i;
+            last = i;
+        }
+    }
+    if (first == -1) return false;   // nothing changed
+
+    // the block between them must be the original block in reverse order
+    for (int i = first; i <= last; i++){
+        if (after[i] != before[first + last - i]) return false;
+    }
+    return true;
+}
+
+    // rate 0 never changes the genome
+
+TEST(Mutate, RateZeroNeverChangesGenome) {
+    for (unsigned seed = 0; seed < 100; seed++){
+        std::mt19937 gen(seed);
+        Genome g = random_genome(10, gen);
+        const Genome original = g;
+
+        Genetic_algorithm::mutate(g, gen, 0.0f);
+
+        EXPECT_EQ(g, original) << "seed " << seed;
+    }
+}
+
+    // rate 1 always changes the genome (the two points always differ, so the
+    // reversed block is at least 2 long and the order must change)
+
+TEST(Mutate, RateOneAlwaysChangesGenome) {
+    for (unsigned seed = 0; seed < 100; seed++){
+        std::mt19937 gen(seed);
+        Genome g = random_genome(10, gen);
+        const Genome original = g;
+
+        Genetic_algorithm::mutate(g, gen, 1.0f);
+
+        EXPECT_NE(g, original) << "seed " << seed;
+    }
+}
+
+    // the change is one block reversed, with everything outside it untouched
+
+TEST(Mutate, ChangeIsASingleReversedBlock) {
+    for (unsigned seed = 0; seed < 200; seed++){
+        std::mt19937 gen(seed);
+        Genome g = random_genome(12, gen);
+        const Genome original = g;
+
+        Genetic_algorithm::mutate(g, gen, 1.0f);
+
+        EXPECT_TRUE(is_single_reversed_block(original, g)) << "seed " << seed;
+    }
+}
+
+    // the result is always a valid permutation of the same length
+
+TEST(Mutate, AlwaysReturnsValidPermutationOfSameLength) {
+    std::mt19937 rng(7);
+
+    for (int run = 0; run < 1000; run++){
+        int n = std::uniform_int_distribution<int>(3, 50)(rng);
+        float rate = std::uniform_real_distribution<float>(0.0f, 1.0f)(rng);
+        Genome g = random_genome(n, rng);
+
+        Genetic_algorithm::mutate(g, rng, rate);
+
+        ASSERT_EQ(g.size(), size_t(n)) << "run " << run;
+        ASSERT_TRUE(is_valid_permutation(g, n)) << "run " << run << ", n = " << n << ", rate " << rate;
+    }
+}
+
+    // the same seed gives the same result
+
+TEST(Mutate, SameSeedGivesSameResult) {
+    std::mt19937 setup(1);
+    const Genome original = random_genome(20, setup);
+
+    Genome a = original;
+    Genome b = original;
+    std::mt19937 gen_a(123);
+    std::mt19937 gen_b(123);
+
+    Genetic_algorithm::mutate(a, gen_a, 1.0f);
+    Genetic_algorithm::mutate(b, gen_b, 1.0f);
+
+    EXPECT_EQ(a, b);
+}
+
+    // the smallest valid genome (3 nodes, the map minimum) still mutates correctly
+
+TEST(Mutate, SmallestGenomeStillMutatesCorrectly) {
+    for (unsigned seed = 0; seed < 50; seed++){
+        std::mt19937 gen(seed);
+        Genome g = {0, 1, 2};
+        const Genome original = g;
+
+        Genetic_algorithm::mutate(g, gen, 1.0f);
+
+        EXPECT_TRUE(is_valid_permutation(g, 3)) << "seed " << seed;
+        EXPECT_TRUE(is_single_reversed_block(original, g)) << "seed " << seed;
+    }
+}
+
+    // fail: mutation rate must be between 0 and 1
+
+TEST(Mutate, ThrowsOnNegativeRate) {
+    std::mt19937 gen(1);
+    Genome g = {0, 1, 2, 3};
+
+    EXPECT_THROW(Genetic_algorithm::mutate(g, gen, -0.1f), std::runtime_error);
+}
+
+TEST(Mutate, ThrowsOnRateAboveOne) {
+    std::mt19937 gen(1);
+    Genome g = {0, 1, 2, 3};
+
+    EXPECT_THROW(Genetic_algorithm::mutate(g, gen, 1.1f), std::runtime_error);
+}
+
+    // fail: a genome too short to pick two different points
+
+TEST(Mutate, ThrowsOnGenomeOfOneNode) {
+    std::mt19937 gen(1);
+    Genome g = {0};
+
+    EXPECT_THROW(Genetic_algorithm::mutate(g, gen, 1.0f), std::runtime_error);
+}
+
+TEST(Mutate, ThrowsOnEmptyGenome) {
+    std::mt19937 gen(1);
+    Genome g;
+
+    EXPECT_THROW(Genetic_algorithm::mutate(g, gen, 1.0f), std::runtime_error);
+}
