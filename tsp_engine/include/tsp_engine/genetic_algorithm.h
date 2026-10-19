@@ -1,11 +1,8 @@
 #pragma once
-#include <iostream>
 #include <vector>
 #include <random> 
-#include <numeric>
 #include <algorithm>
 #include <string>
-#include <sstream>
 #include <stdexcept>
 #include "tsp_engine/map_io.h"
 #include "tsp_engine/individual.h"
@@ -14,9 +11,6 @@ class Genetic_algorithm{
 
     private: 
         //! review variables, its changed and I wont need them all
-
-        //random number generator 
-        std::mt19937 m_gen{std::random_device{}()};
 
         const int m_P; //population size
         const int m_R; // terations 
@@ -27,29 +21,32 @@ class Genetic_algorithm{
         std::vector<Individual> m_population; // for storing the population of individuals
         std::vector<std::vector<int>> m_dist_matrix; // matrix storing distances
 
+        //random number generator 
+        std::mt19937 m_gen;
 
-        //find current best indiviual
-        std::vector<int> find_best_ind();
-
-
-        //tornament selection 
-            //randomly select two parents and keep the strongest as an offspring
-        void tournament_selectin();
-
-        // go through offspring in pairs and cross over the genomes
-        void crossover();
-
-        // randomly mutate (or swap) genes in a genome 
-        void mutate();
-
-        //swap the best individual from the last run for the worst of this run
-        void elitism();
+        
 
 
     public: 
 
         
-        Genetic_algorithm(int p, int r, float m, std::istream& in);
+        Genetic_algorithm(int p, int r, float m, std::istream& in, unsigned seed);
+
+        //find current best indiviual
+        static Individual& find_best_ind(std::vector<Individual>& population);
+
+        //tornament selection 
+            //randomly select two parents and keep the strongest as an offspring
+        static Individual& tournament_selection(Individual& offspring1, Individual& offspring2);
+
+        // go through offspring in pairs and cross over the genomes
+        static std::vector<int> crossover(const std::vector<int>& genome1,const std::vector<int>& genome2, const int cross_low, const int cross_high);
+
+        // randomly mutate (or swap) genes in a genome 
+        static void mutate(Individual& offspring);
+
+        //swap the best individual from the last run for the worst of this run
+        void elitism();
 
         void run_ga();
         //build a runner function 

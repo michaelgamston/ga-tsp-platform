@@ -1,9 +1,14 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <random> 
 #include "tsp_engine/map_io.h"
 
 int main() {
+
+//random number generator 
+    unsigned seed = 42;
+
     try {
         auto dist = parse_dist_matrix(std::cin);
         // ... run GA
