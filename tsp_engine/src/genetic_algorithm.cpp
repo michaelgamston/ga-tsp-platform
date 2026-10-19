@@ -21,6 +21,8 @@ Genetic_algorithm::Genetic_algorithm(int p, int r, float m, std::istream& in) : 
         m_population.emplace_back(m_gen, m_dist_matrix);
     }
 
+
+    //hello world
 }
 
 //find current best indiviual
