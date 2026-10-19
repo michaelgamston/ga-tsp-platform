@@ -43,6 +43,41 @@ Individual Genetic_algorithm::find_best_ind(const std::vector<Individual>& popul
 
 }
 
+std::vector<Individual> Genetic_algorithm::tournament_selection(const std::vector<Individual>& population, std::mt19937& gen){
+    
+    if (int(population.size()) < TOURNAMENT_SIZE) throw std::runtime_error("Tournament selection Error : population size is lower than "+std::to_string(TOURNAMENT_SIZE));
+
+    int competitorA; 
+    int competitorB;
+    std::uniform_int_distribution<int> pick(0, int(population.size()) - 1);
+
+    std::vector<Individual> mating_pool;
+    mating_pool.reserve(population.size());
+
+    for (int i = 0; i < int(population.size()); i++){
+        competitorA = 0;
+        competitorB = 0;
+        // pick unique competitors
+        while (competitorA == competitorB || competitorA == i || competitorB == i){
+            competitorA = pick(gen);
+            competitorB = pick(gen);
+        }
+
+        int best = i;                                      
+        for (int c : {competitorA, competitorB}) {         
+            if (population[c].get_fitness() < population[best].get_fitness()) {
+                best = c;
+            }
+        }
+        mating_pool.push_back(population[best]);           
+
+
+    }
+
+    return mating_pool;
+
+}
+
 std::vector<int> Genetic_algorithm::crossover(const std::vector<int>& genome1,const std::vector<int>& genome2, const int cross_low, const int cross_high){
     
     if (genome1.size() != genome2.size()) throw std::runtime_error("Crossover Error : genomes of different lengths found in crossover");

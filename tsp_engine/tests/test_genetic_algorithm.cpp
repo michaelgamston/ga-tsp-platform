@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <map>
 #include <numeric>
 #include <random>
 #include <vector>
@@ -17,7 +18,7 @@ static bool is_valid_permutation(const Genome& g, size_t n){
     return sorted == expected;
 }
 
-// find_best_ind test
+//! find_best_ind test -----------------------------------------------------------------
 
 using Matrix = std::vector<std::vector<int>>;
 
@@ -132,13 +133,161 @@ TEST(FindBestInd, ThrowsOnEmptyPopulation) {
     EXPECT_THROW(Genetic_algorithm::find_best_ind(pop), std::runtime_error);
 }
 
+//! tournament selection test --------------------------------------------------------------------
+
+// helper: the fitness of every individual in a group, in order
+static std::vector<long long> fitnesses(const std::vector<Individual>& group){
+    std::vector<long long> out;
+    for (const Individual& ind : group) out.push_back(ind.get_fitness());
+    return out;
+}
+
+// helper: a population of 5 with all-different fitness values
+// MAP only has 3 distinct tours, so the two worst are built on a copy of MAP
+// with edge 1 - 3 removed, which adds a penalty to any tour using it
+static std::vector<Individual> population_of_five(){
+    Matrix no_1_3 = MAP;
+    no_1_3[1][3] = no_1_3[3][1] = -1;
+
+    return {
+        with_genome(MAP, MIDDLE),      // 45
+        with_genome(no_1_3, WORST),    // penalty + 35   (worst)
+        with_genome(MAP, BEST),        // 30             (best)
+        with_genome(no_1_3, BEST),     // penalty + 14   (second worst)
+        with_genome(MAP, WORST),       // 51
+    };
+}
+
+static const long long P = Individual::m_PENALTY;
+static const long long FIVE_BEST         = 30;
+static const long long FIVE_SECOND_WORST = P + 14;
+static const long long FIVE_WORST        = P + 35;
+
+    // the pool is the same size as the population
+
+TEST(TournamentSelection, PoolIsSameSizeAsPopulation) {
+    auto pop = population_of_five();
+    std::mt19937 gen(1);
+
+    EXPECT_EQ(Genetic_algorithm::tournament_selection(pop, gen).size(), pop.size());
+}
+
+    // every member of the pool is a copy of someone in the population
+
+TEST(TournamentSelection, EveryPoolMemberComesFromPopulation) {
+    auto pop = population_of_five();
+    std::mt19937 gen(1);
+
+    auto pool = Genetic_algorithm::tournament_selection(pop, gen);
+
+    for (const Individual& chosen : pool){
+        bool found = std::any_of(pop.begin(), pop.end(), [&](const Individual& ind){
+            return ind.get_genome() == chosen.get_genome() && ind.get_fitness() == chosen.get_fitness();
+        });
+        EXPECT_TRUE(found) << "pool member with fitness " << chosen.get_fitness() << " is not in the population";
+    }
+}
+
+    // with 3 different competitors per tournament, the worst two can never win
+
+TEST(TournamentSelection, WorstTwoAreNeverSelected) {
+    auto pop = population_of_five();
+
+    // try many seeds, since this must hold for every one of them
+    for (unsigned seed = 0; seed < 50; seed++){
+        std::mt19937 gen(seed);
+        auto pool = Genetic_algorithm::tournament_selection(pop, gen);
+
+        for (long long f : fitnesses(pool)){
+            EXPECT_NE(f, FIVE_WORST)        << "seed " << seed;
+            EXPECT_NE(f, FIVE_SECOND_WORST) << "seed " << seed;
+        }
+    }
+}
+
+    // when the population is exactly the tournament size, everyone competes every time,
+    // so every slot in the pool is the best individual
+
+TEST(TournamentSelection, PopulationOfTournamentSizeGivesAllBest) {
+    std::vector<Individual> pop = {with_genome(MAP, MIDDLE), with_genome(MAP, WORST), with_genome(MAP, BEST)};
+    ASSERT_EQ(pop.size(), size_t(Genetic_algorithm::TOURNAMENT_SIZE));
+    std::mt19937 gen(1);
+
+    auto pool = Genetic_algorithm::tournament_selection(pop, gen);
+
+    for (const Individual& chosen : pool){
+        EXPECT_EQ(chosen.get_genome(), BEST);
+    }
+}
+
+    // the same seed gives the same pool
+
+TEST(TournamentSelection, SameSeedGivesSamePool) {
+    auto pop = population_of_five();
+    std::mt19937 gen_a(123);
+    std::mt19937 gen_b(123);
+
+    EXPECT_EQ(fitnesses(Genetic_algorithm::tournament_selection(pop, gen_a)),
+              fitnesses(Genetic_algorithm::tournament_selection(pop, gen_b)));
+}
+
+    // selecting does not change the population
+
+TEST(TournamentSelection, DoesNotModifyPopulation) {
+    auto pop = population_of_five();
+    auto before = fitnesses(pop);
+    std::mt19937 gen(1);
+
+    Genetic_algorithm::tournament_selection(pop, gen);
+
+    EXPECT_EQ(fitnesses(pop), before);
+}
+
+    // statistical: the best individual is picked at least as often as any other
+
+TEST(TournamentSelection, BestIsSelectedAtLeastAsOftenAsAnyOther) {
+    auto pop = population_of_five();
+    std::mt19937 gen(99);
+
+    // count how many times each fitness value is chosen over many pools
+    std::map<long long, int> counts;
+    for (int run = 0; run < 200; run++){
+        for (long long f : fitnesses(Genetic_algorithm::tournament_selection(pop, gen))){
+            counts[f]++;
+        }
+    }
+
+    for (const auto& [fitness, count] : counts){
+        EXPECT_GE(counts[FIVE_BEST], count) << "fitness " << fitness << " was chosen more than the best";
+    }
+}
+
+    // fail: an empty population has nobody to select
+
+TEST(TournamentSelection, ThrowsOnEmptyPopulation) {
+    std::vector<Individual> pop;
+    std::mt19937 gen(1);
+
+    EXPECT_THROW(Genetic_algorithm::tournament_selection(pop, gen), std::runtime_error);
+}
+
+    // fail: fewer individuals than the tournament size can't fill a tournament
+
+TEST(TournamentSelection, ThrowsOnPopulationSmallerThanTournamentSize) {
+    std::vector<Individual> pop = {with_genome(MAP, BEST), with_genome(MAP, WORST)};   // 2 < 3
+    std::mt19937 gen(1);
+
+    EXPECT_THROW(Genetic_algorithm::tournament_selection(pop, gen), std::runtime_error);
+}
+
+
+//! cross over test ------------------------------------------------------------------------------
 
 // parents used by most tests (8 nodes, positions 0 - 7)
 static const Genome A = {0, 1, 2, 3, 4, 5, 6, 7};
 static const Genome B = {3, 7, 5, 1, 6, 0, 2, 4};
 // cut points are inclusive: (2, 5) means positions 2, 3, 4 and 5
 
-// cross over test
 
     // pass
         // return a child with crossover in the correct range

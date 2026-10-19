@@ -11,8 +11,7 @@
 class Genetic_algorithm{
 
     private: 
-        //! review variables, its changed and I wont need them all
-
+       
         const int m_P; //population size
         const int m_R; // terations 
         const float m_M; // mutation rate  
@@ -21,15 +20,12 @@ class Genetic_algorithm{
         std::vector<Individual> m_population; // for storing the population of individuals
         std::vector<std::vector<int>> m_dist_matrix; // matrix storing distances
 
-
         //random number generator 
         std::mt19937 m_gen;
 
-        
-
-
     public: 
 
+        static constexpr int TOURNAMENT_SIZE = 3;
         
         Genetic_algorithm(int p, int r, float m, std::istream& in, unsigned seed);
 
@@ -38,7 +34,7 @@ class Genetic_algorithm{
 
         //tornament selection 
             //randomly select two parents and keep the strongest as an offspring
-        static Individual& tournament_selection(Individual& offspring1, Individual& offspring2);
+        static std::vector<Individual> tournament_selection(const std::vector<Individual>& population, std::mt19937& gen);
 
         // go through offspring in pairs and cross over the genomes
         static std::vector<int> crossover(const std::vector<int>& genome1,const std::vector<int>& genome2, const int cross_low, const int cross_high);
