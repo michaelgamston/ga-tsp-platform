@@ -8,12 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(tsp_core
     src/map_io.cpp
     src/individual.cpp
+    src/genetic_algorithm.cpp
 )
 target_include_directories(tsp_core PUBLIC include)
 target_compile_options(tsp_core PRIVATE -Wall -Wextra)
 
 # ---- Engine executable: just main(), linked to the library ----
-add_executable(tsp_engine src/tsp_engine.cpp)
+add_executable(tsp_engine src/main.cpp)
 target_link_libraries(tsp_engine PRIVATE tsp_core)
 target_compile_options(tsp_engine PRIVATE -Wall -Wextra)
 
@@ -31,6 +32,7 @@ enable_testing()
 add_executable(engine_tests 
     tests/test_map_io.cpp
     tests/test_individual.cpp
+    tests/test_genetic_algorithm.cpp
 )
 
 target_link_libraries(engine_tests PRIVATE tsp_core GTest::gtest_main)
