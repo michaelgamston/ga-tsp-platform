@@ -58,29 +58,39 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
     every unconnected edge, and is recalculated automatically whenever the genome changes
   - private state behind getters and a validating setter, which rejects duplicate nodes,
     out-of-range nodes and genomes of the wrong length, and leaves the route unchanged when it does
+- **Genetic algorithm engine**, with each operator a self-contained, separately tested function:
+  - **tournament selection** (tournament size 3) builds a mating pool that favours shorter routes
+  - **ordered crossover (OX)** combines two parent routes and always produces a valid route
+  - **inversion mutation** reverses a random section of a route, with a configurable mutation rate
+  - **elitism** carries the best route into the next generation, so the best result never gets worse
+  - **reproducible runs:** the same seed and settings always give the same result
+  - **finds the proven optimal routes** on the 5- and 8-city example maps, and avoids
+    unconnected edges on the 20-city map
+- **Progress output:** one JSON line per generation (generation, best fitness, best route),
+  ready for the worker service to stream to the website
 - **Project structure:** `include/` / `src/` / `tests/` layout, with the engine code built as a
   reusable library (`tsp_core`)
 - **CMake build** with compiler warnings enabled
-- **44 unit tests** (GoogleTest) across the parser and `Individual`, covering pass, fail, boundary and
-  real-data cases, written largely test-first. These tests caught real bugs, including two crashes
-  from out-of-range memory access, before the code was merged
+- **109 unit tests** (GoogleTest) across the parser, `Individual` and the genetic algorithm, covering
+  pass, fail, boundary, property-based (e.g. "crossover always returns a valid route" over 1,000
+  random cases) and real-data cases, written largely test-first. These tests caught real bugs
+  before the code was merged, including crashes from out-of-range memory access and a
+  dangling reference
 - **Continuous integration:** GitHub Actions builds and tests every pull request
 - **Workflow:** all changes go through feature branches and reviewed pull requests
 
 ### 🔨 In progress
-- **Genetic algorithm engine:** moving `Genetic_algorithm` into its own files, then adding
-  selection, crossover and mutation
+- **Command-line entry point:** connecting `main` to the engine, so the population size,
+  generations, mutation rate and seed can be passed as arguments and the map read from stdin
 
 ---
 
 ## Next steps
 
-1. **Finish the GA engine:** tournament selection, ordered crossover (OX) and inversion mutation,
-   each with unit tests, plus the generation loop, validated against the known optimal tours
-   of the example maps
-2. **Engine output:** stream progress (best and average tour length per generation) as JSON lines
+1. **Command-line entry point:** run the engine from the terminal with its settings as arguments
+2. **Docker:** containerise the engine with a multi-stage build
 3. **API and worker services:** job submission, queueing (Redis) and result storage (Postgres)
-4. **Docker:** containerise each service and run everything locally with docker-compose
+4. **docker-compose:** run every service together locally
 5. **Kubernetes:** deploy locally, then package with Helm
 6. **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD
 7. **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
@@ -98,10 +108,10 @@ cmake --build build
 
 # run the tests
 ctest --test-dir build --output-on-failure
-
-# run the engine on an example map
-./build/tsp_engine < ../maps/map_05.csv
 ```
+
+Running the engine itself from the command line is in progress (see [Progress](#progress)).
+Until then, the test suite is the way to see it working: the `RunGA` tests solve the example maps.
 
 Example maps and the input format are described in [maps/README.md](maps/README.md).
 
