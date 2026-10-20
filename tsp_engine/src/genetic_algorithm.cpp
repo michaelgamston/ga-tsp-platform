@@ -135,3 +135,22 @@ void Genetic_algorithm::mutate(std::vector<int>& genome, std::mt19937& gen, cons
     }
 }
 
+void Genetic_algorithm::elitism(std::vector<Individual>& population, const Individual& previous_best){
+
+    if (population.size() < 2u) throw std::runtime_error("Elitism Error : Population size too small");
+
+    //to avoid copying each time we can point to the best element
+    Individual* worst_ind_ptr = &population[0];
+
+    for (Individual& ind : population){
+        //iterating through each ind in population
+        //if a new lowest fitness is found the pointer shifts to point at that ind
+        if (ind.get_fitness() > worst_ind_ptr->get_fitness()){
+            worst_ind_ptr = &ind;
+        }
+    }
+
+    //change value the pointer is pointing to
+    //the pointer points to a place in the vector with the worst individual
+    *worst_ind_ptr = previous_best;
+}

@@ -43,7 +43,7 @@ class Genetic_algorithm{
         static void mutate(std::vector<int>& genome, std::mt19937& gen, const float mutation_rate);
 
         //swap the best individual from the last run for the worst of this run
-        static void elitism(std::vector<Individual>& m_population, const Individual& previous_best);
+        static void elitism(std::vector<Individual>& population, const Individual& previous_best);
 
         void run_ga();
         //build a runner function 
