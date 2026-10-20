@@ -14,6 +14,9 @@
 Genetic_algorithm::Genetic_algorithm(int p, int r, float m, std::istream& in, unsigned seed) 
 : m_P(p), m_R(r), m_M(m), m_dist_matrix(parse_dist_matrix(in)), m_gen(seed){
     
+    if (m_R < 1) throw std::runtime_error("Intialisation Error : R too low. Must have more than 0 iterations.");
+    if (m_M < 0 || m_M > 1) throw std::runtime_error("Intialisation Error : Mutation rate M of "+std::to_string(m_M)+" of bounds. Must be between 0 - 1");
+    if (m_P < 3) throw std::runtime_error("Intialisation Error : Population size must be more than 2.");
     //generate new population
     //reserve space in the vector 
     m_population.reserve(m_P);
@@ -21,8 +24,6 @@ Genetic_algorithm::Genetic_algorithm(int p, int r, float m, std::istream& in, un
         //in each empty space run the Individual constructor
         m_population.emplace_back(m_gen, m_dist_matrix);
     }
-
-
 }    
 
 Individual Genetic_algorithm::find_best_ind(const std::vector<Individual>& population){
@@ -152,5 +153,73 @@ void Genetic_algorithm::elitism(std::vector<Individual>& population, const Indiv
 
     //change value the pointer is pointing to
     //the pointer points to a place in the vector with the worst individual
-    *worst_ind_ptr = previous_best;
+    // only swap if the previous best is better than the previous worst
+    if (worst_ind_ptr->get_fitness() > previous_best.get_fitness()){
+        *worst_ind_ptr = previous_best;
+    }
+}
+
+void Genetic_algorithm::write_progress(std::ostream& out, int generation, const Individual& best){
+
+    out << "{ \"Gen\" : " << generation << " , ";  
+    out << "\"Fitness\" : " << best.get_fitness() << " , ";
+    out << "\"Genome\" : ";
+
+    const std::vector<int>& tour = best.get_genome();   // const&: no copy
+
+    out << "[";
+    for (size_t i = 0; i < tour.size(); i++) {
+        if (i > 0) out << ",";      // a comma before every value except the first
+        out << tour[i];
+    }
+    out << "] }" << std::endl;
+
+}
+
+Genetic_algorithm::GA_result Genetic_algorithm::run_ga(std::ostream& out){
+
+    GA_result result_tracker{find_best_ind(m_population)};
+
+    for (int generation = 0; generation < m_R; generation++){
+        // create a mating pool with tournament selection  
+        m_population = tournament_selection(m_population, m_gen);
+
+        // create offspring in place with mating_pool with crossover 
+        for (size_t i = 0; i < m_population.size(); i++){
+
+            std::vector<int> positions(m_population[i].get_genome().size());
+            std::iota(positions.begin(), positions.end(), 0);        // 0, 1, 2, ..., n-1
+
+            std::vector<int> points;
+            std::sample(positions.begin(), positions.end(), std::back_inserter(points), 2, m_gen);
+
+            int low_cross  = points[0];   // always the smaller one: sample keeps the input order
+            int high_cross = points[1];   // always different from low: no repeats
+            
+            std::uniform_int_distribution<size_t> pick(0, m_population.size() - 1);
+            size_t partner = pick(m_gen);
+
+            while(partner == i) partner = pick(m_gen);
+
+            std::vector<int> new_genome = crossover(m_population[i].get_genome(), m_population[partner].get_genome(), low_cross, high_cross);
+
+            // run mutate for each new individual 
+            mutate(new_genome, m_gen, m_M);
+
+            m_population[i].update_genome(new_genome, m_dist_matrix);
+
+        }
+
+        // complete with elitism 
+        elitism(m_population, result_tracker.best);
+
+        // copy out best individual and post results 
+        result_tracker.best = find_best_ind(m_population);
+        result_tracker.best_fit_per_generation.push_back(result_tracker.best.get_fitness());
+
+        write_progress(out, generation+1, result_tracker.best);
+    }
+
+    return result_tracker;
+
 }

@@ -13,9 +13,8 @@ class Genetic_algorithm{
     private: 
        
         const int m_P; //population size
-        const int m_R; // terations 
+        const int m_R; // iterations 
         const float m_M; // mutation rate  
-        std::optional<Individual> m_best_ind;
        
         std::vector<Individual> m_population; // for storing the population of individuals
         std::vector<std::vector<int>> m_dist_matrix; // matrix storing distances
@@ -24,6 +23,13 @@ class Genetic_algorithm{
         std::mt19937 m_gen;
 
     public: 
+
+        struct GA_result {
+            Individual best; 
+            std::vector<long long> best_fit_per_generation;
+
+            explicit GA_result(const Individual& initial_best) : best(initial_best) {}
+        };
 
         static constexpr int TOURNAMENT_SIZE = 3;
         
@@ -45,9 +51,11 @@ class Genetic_algorithm{
         //swap the best individual from the last run for the worst of this run
         static void elitism(std::vector<Individual>& population, const Individual& previous_best);
 
-        void run_ga();
+        //write progress per generation to output
+        static void write_progress(std::ostream& out, int generation, const Individual& best);
+
+        GA_result run_ga(std::ostream& out);
         //build a runner function 
             //runs the algorithm for set number of itterations 
             // or untill it stops improving
-
 };
