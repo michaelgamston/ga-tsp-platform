@@ -10,6 +10,9 @@ realistic, scalable architecture.
 
 ---
 
+**Disclaimer** 
+The project has used AI to format this README to improve flow and readability. However, all code and development decisions have been made by me. 
+
 ## The project
 
 Users submit a map (a matrix of distances between locations) and the system searches
