@@ -30,7 +30,7 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
 |---|---|---|
 | Solver engine | C++17, CMake, GoogleTest | Evolves candidate routes using a genetic algorithm |
 | API & workers | *(evaluating which language to use)* | Accept jobs, queue them, run the engine, report progress |
-| Infrastructure | Docker, Kubernetes (AKS), Helm, KEDA | Containerised services with queue-driven autoscaling |
+| Infrastructure | Docker, Kubernetes (AKS) | Containerised services with queue-driven autoscaling |
 | Cloud & delivery | Azure, Terraform, GitHub Actions | Infrastructure as code; automated build, test and deploy |
 
 ---
