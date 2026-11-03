@@ -81,10 +81,11 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
   dangling reference
 - **Continuous integration:** GitHub Actions builds and tests every pull request
 - **Workflow:** all changes go through feature branches and reviewed pull requests
-
-### 🔨 In progress
 - **Command-line entry point:** connecting `main` to the engine, so the population size,
   generations, mutation rate and seed can be passed as arguments and the map read from stdin
+
+### 🔨 In progress
+
 
 ---
 
