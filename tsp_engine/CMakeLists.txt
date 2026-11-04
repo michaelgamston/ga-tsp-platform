@@ -18,6 +18,9 @@ add_executable(tsp_engine src/main.cpp)
 target_link_libraries(tsp_engine PRIVATE tsp_core)
 target_compile_options(tsp_engine PRIVATE -Wall -Wextra)
 
+option(BUILD_TESTS "Build unit tests" ON)
+
+if(BUILD_TESTS)
 # ---- GoogleTest: downloaded automatically at configure time ----
 include(FetchContent)
 FetchContent_Declare(
@@ -42,3 +45,5 @@ target_compile_options(engine_tests PRIVATE -Wall -Wextra)
 
 include(GoogleTest)
 gtest_discover_tests(engine_tests)
+
+endif()
