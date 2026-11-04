@@ -79,29 +79,43 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
   random cases) and real-data cases, written largely test-first. These tests caught real bugs
   before the code was merged, including crashes from out-of-range memory access and a
   dangling reference
-- **Continuous integration:** GitHub Actions builds and tests every pull request
+- **Continuous integration:** GitHub Actions builds and tests every pull request, then builds
+  the Docker image and smoke-tests it on an example map
 - **Workflow:** all changes go through feature branches and reviewed pull requests
 - **Command-line entry point:** connecting `main` to the engine, so the population size,
   generations, mutation rate and seed can be passed as arguments and the map read from stdin
+- **Docker:** containerise the engine with a multi-stage build
 
 ### 🔨 In progress
 
+**API and worker services:** job submission, queueing (Redis) and result storage (Postgres)
 
 ---
 
 ## Next steps
 
-1. **Command-line entry point:** run the engine from the terminal with its settings as arguments
-2. **Docker:** containerise the engine with a multi-stage build
-3. **API and worker services:** job submission, queueing (Redis) and result storage (Postgres)
-4. **docker-compose:** run every service together locally
-5. **Kubernetes:** deploy locally, then package with Helm
-6. **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD
-7. **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
+1. **docker-compose:** run every service together locally
+2. **Kubernetes:** deploy locally, then package with Helm
+3. **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD
+4. **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
 
 ---
 
 ## Running it locally
+
+### With Docker
+
+**Requirements:** Docker
+
+```bash
+cd tsp_engine
+docker build -t tsp-engine .
+docker run -i --rm tsp-engine --pop 100 --iter 300 < ../maps/map_08.csv
+```
+
+The `-i` flag is required, because the map is passed in through stdin.
+
+### Without Docker
 
 **Requirements:** CMake ≥ 3.22 and a C++17 compiler (GCC 11+)
 
@@ -112,10 +126,27 @@ cmake --build build
 
 # run the tests
 ctest --test-dir build --output-on-failure
+
+# run the engine
+./build/tsp_engine --pop 100 --iter 300 < ../maps/map_08.csv
 ```
 
-Running the engine itself from the command line is in progress (see [Progress](#progress)).
-Until then, the test suite is the way to see it working: the `RunGA` tests solve the example maps.
+### Options
+
+| Flag | Meaning | Default |
+|---|---|---|
+| `--pop` | Population size (minimum 3) | 100 |
+| `--iter` | Number of generations (minimum 1) | 50 |
+| `--mut_rate` | Mutation rate (0 to 1) | 0.1 |
+| `--seed` | Random seed, for repeatable runs | 42 |
+
+### Output
+
+The engine prints one JSON line per generation, showing the best route found so far:
+
+```
+{ "Gen" : 300 , "Fitness" : 282 , "Genome" : [1,6,4,7,0,2,3,5] }
+```
 
 Example maps and the input format are described in [maps/README.md](maps/README.md).
 
@@ -128,5 +159,6 @@ maps/                Example distance-matrix maps (with known optimal tour lengt
 tsp_engine/
 ├── include/         Public headers
 ├── src/             Engine source code
-└── tests/           GoogleTest unit tests
+├── tests/           GoogleTest unit tests
+└── Dockerfile       Multi-stage build for the engine image
 ```
