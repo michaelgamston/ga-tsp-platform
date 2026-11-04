@@ -32,6 +32,8 @@ int main(int argc, char* argv[]) {
         Genetic_algorithm ga(population, iterations, mutation_rate, std::cin, seed);
         ga.run_ga(std::cout);
 
+        return 0;
+
     } catch (const std::exception& e) {
 
         std::cerr << "Error: " << e.what() << std::endl;
