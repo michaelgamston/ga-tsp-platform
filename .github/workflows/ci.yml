@@ -23,5 +23,11 @@ jobs:
 
             - name: Run tests
               run: ctest --test-dir build --output-on-failure
+
+            - name: Build Container
+              run: docker build -t tsp-engine . 
+              
+            - name: Test Container
+              run : docker run -i --rm tsp-engine <../maps/map_05.csv | tail -n 1
             
 
