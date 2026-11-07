@@ -1,0 +1,14 @@
+services:
+  redis:
+  #build premade redis queue image
+    image: redis:7 
+  api:
+  #build the api/ dockerfile
+    build: api/
+    ports: 
+      - "8000:8000" #connect container port 8000 to local port 8000
+    environment: 
+      REDIS_HOST: redis #create a a environment variable called REDIS_HOST 
+    depends_on: 
+      - redis
+      
