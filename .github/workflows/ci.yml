@@ -13,7 +13,7 @@ jobs:
                 working-directory: tsp_engine
         steps:
             - name: Check out code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Configure
               run: cmake -S . -B build
