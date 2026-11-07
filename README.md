@@ -88,16 +88,15 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
 
 ### 🔨 In progress
 
-**API and worker services:** job submission, queueing (Redis) and result storage (Postgres)
+**API and worker services:** job submission, queueing (Redis) and result storage (Azure Postgres)
+**docker-compose:** run every service together locally
 
 ---
 
 ## Next steps
-
-1. **docker-compose:** run every service together locally
-2. **Kubernetes:** deploy locally, then package with Helm
-3. **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD
-4. **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
+**Light weight frontend** A user interface to interact with the engine
+**Kubernetes:** deploy locally, then package with Helm
+**Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
 
 ---
 
@@ -155,10 +154,12 @@ Example maps and the input format are described in [maps/README.md](maps/README.
 ## Repository layout
 ```
 .github/workflows/   CI pipeline
+api/                 Backend API 
 maps/                Example distance-matrix maps (with known optimal tour lengths)
 tsp_engine/
 ├── include/         Public headers
 ├── src/             Engine source code
 ├── tests/           GoogleTest unit tests
 └── Dockerfile       Multi-stage build for the engine image
+docker-compose.yml   Container orchestration file
 ```
