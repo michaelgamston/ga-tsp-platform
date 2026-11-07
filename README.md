@@ -88,15 +88,16 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
 
 ### 🔨 In progress
 
-**API and worker services:** job submission, queueing (Redis) and result storage (Azure Postgres)
-**docker-compose:** run every service together locally
+- **API and worker services:** job submission, queueing (Redis) and result storage (Azure Postgres)
+- **docker-compose:** run every service together locally
 
 ---
 
 ## Next steps
-**Light weight frontend** A user interface to interact with the engine
-**Kubernetes:** deploy locally, then package with Helm
-**Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
+- **Light weight frontend** A user interface to interact with the engine
+- **Kubernetes:** deploy locally, then package with Helm
+- **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD 
+- **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
 
 ---
 
