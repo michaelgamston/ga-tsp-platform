@@ -1,3 +1,4 @@
+name: tsp
 services:
   redis:
   #build premade redis queue image
@@ -13,4 +14,13 @@ services:
       REDIS_HOST: redis #create a a environment variable called REDIS_HOST 
     depends_on: 
       - redis
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    environment:
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+  
       
