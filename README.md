@@ -85,19 +85,19 @@ Web page → API → Job queue (Redis) → Worker containers → C++ GA engine
 - **Command-line entry point:** connecting `main` to the engine, so the population size,
   generations, mutation rate and seed can be passed as arguments and the map read from stdin
 - **Docker:** containerise the engine with a multi-stage build
+- **API and worker services:** job submission, queueing (Redis) and result storage (Azure Postgres)
+- **docker-compose:** run every service together locally
 
 ### 🔨 In progress
 
-- **API and worker services:** job submission, queueing (Redis) and result storage (Azure Postgres)
-- **docker-compose:** run every service together locally
+- **Kubernetes:** deploy locally, then package with Helm
+- **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
 
 ---
 
 ## Next steps
-- **Light weight frontend** A user interface to interact with the engine
-- **Kubernetes:** deploy locally, then package with Helm
-- **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/CD 
-- **Autoscaling demo:** KEDA scales workers with queue length (0 → N → 0)
+- **Light weight frontend** A user interface to interact with the engine CD 
+- **Azure:** provision AKS and a container registry with Terraform, then deploy through CI/
 
 ---
 
