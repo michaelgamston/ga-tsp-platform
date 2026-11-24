@@ -12,6 +12,10 @@ services:
       - "8000:8000" #connect container port 8000 to local port 8000
     environment: 
       REDIS_HOST: redis #create a a environment variable called REDIS_HOST 
+      DB_HOST: ${DB_HOST}
+      DB_NAME: tsp_db
+      DB_USER: tspadmin
+      DB_PASSWORD: ${DB_PASSWORD:?run source scripts/dev-env.sh first}
     depends_on: 
       - redis
   worker:
@@ -20,6 +24,10 @@ services:
       dockerfile: worker/Dockerfile
     environment:
       REDIS_HOST: redis
+      DB_HOST: ${DB_HOST}
+      DB_NAME: tsp_db
+      DB_USER: tspadmin
+      DB_PASSWORD: ${DB_PASSWORD:?run source scripts/dev-env.sh first}
     depends_on:
       - redis
   
