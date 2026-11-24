@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tsp-config
+data: 
+  REDIS_HOST: redis
+  DB_HOST: tsp-postgres-131126.postgres.database.azure.com
+  DB_NAME: tsp_db
+  DB_USER: tspadmin
