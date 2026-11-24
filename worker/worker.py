@@ -2,9 +2,7 @@ import redis
 import os
 import subprocess
 import json
-import datetime
 from psycopg_pool import ConnectionPool 
-from psycopg.rows import dict_row
 
 DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
