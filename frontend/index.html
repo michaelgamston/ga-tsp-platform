@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSP Solver</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- defer: run app.js after the page has loaded, so every element below exists -->
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <h1>Distributed TSP Solver</h1>
+    <p>Submit a map and a genetic algorithm searches for the shortest route that visits every location once.</p>
+    <p class="api-status">
+      API: <span id="health-status">not checked</span>
+      <button type="button" id="health-btn">Check</button>
+    </p>
+  </header>
+
+  <main>
+
+    <!-- Step 1: choose or enter a map, then submit it -->
+    <section aria-labelledby="submit-heading">
+      <h2 id="submit-heading">1. Choose a map</h2>
+
+      <form id="job-form">
+        <div class="field">
+          <label for="example-map">Example map</label>
+          <!-- value = the file to fetch; data-optimal = the best possible route length, if known -->
+          <select id="example-map">
+            <option value="">Choose an example…</option>
+            <option value="maps/map_05.csv" data-optimal="280">map_05: 5 locations</option>
+            <option value="maps/map_08.csv" data-optimal="282">map_08: 8 locations</option>
+            <option value="maps/map_12.csv" data-optimal="319">map_12: 12 locations</option>
+            <option value="maps/map_16.csv" data-optimal="349">map_16: 16 locations</option>
+            <option value="maps/map_20.csv">map_20: 20 locations</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="map-file">Or upload a CSV file</label>
+          <input type="file" id="map-file" accept=".csv,text/csv">
+        </div>
+
+        <div class="field">
+          <label for="map-csv">Map (distance matrix)</label>
+          <textarea id="map-csv" rows="10" required spellcheck="false"
+                    placeholder="0,86,54&#10;86,0,33&#10;54,33,0"></textarea>
+          <p class="hint">
+            One row per line, values separated by commas. The matrix must be square,
+            with 0 on the diagonal and -1 where two locations aren't connected.
+          </p>
+        </div>
+
+        <button type="submit" id="submit-btn">Solve</button>
+        <!-- Shown only if submitting fails (e.g. the API rejects the map) -->
+        <p id="form-error" class="error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <!-- Step 2: hidden until a job is submitted; aria-live announces updates to screen readers -->
+    <section id="job-panel" aria-labelledby="job-heading" aria-live="polite" hidden>
+      <h2 id="job-heading">2. Result</h2>
+
+      <dl class="job-details">
+        <dt>Job ID</dt>
+        <dd id="job-id"></dd>
+
+        <dt>Status</dt>
+        <dd><span id="job-status" class="status"></span></dd>
+
+        <dt>Route length</dt>
+        <dd id="job-fitness">–</dd>
+
+        <dt>Best route</dt>
+        <dd id="job-route">–</dd>
+
+        <dt>Time taken</dt>
+        <dd id="job-time">–</dd>
+      </dl>
+
+      <!-- Shown only if the job fails: the engine's error message -->
+      <pre id="job-error" class="error" hidden></pre>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Built with C++, Python, Redis, Postgres, Docker and Kubernetes ·
+      <a href="https://github.com/michaelgamston/ga-tsp-platform">Source on GitHub</a></p>
+  </footer>
+
+</body>
+</html>
