@@ -30,5 +30,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?run source scripts/dev-env.sh first}
     depends_on:
       - redis
-  
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - api
       
